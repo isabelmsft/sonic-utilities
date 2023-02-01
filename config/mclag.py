@@ -90,8 +90,7 @@ def is_ipv4_addr_valid(addr):
 
 def check_if_interface_is_valid(db, interface_name):
     from .main import interface_name_is_valid
-    if interface_name_is_valid(db,interface_name) is False:
-        ctx.fail("Interface name is invalid. Please enter a valid interface name!!")
+    return interface_name_is_valid(db,interface_name)
 
 def get_intf_vrf_bind_unique_ip(db, interface_name, interface_type):
     intfvrf = db.get_table(interface_type)
@@ -153,11 +152,12 @@ def add_mclag_domain(ctx, domain_id, source_ip_addr, peer_ip_addr, peer_ifname):
         except ValueError as e:
             ctx.fail("Invalid ConfigDB. Error: {}".format(e))
     else:
+        domain_id = str(domain_id)
         if domain_id in mclag_domain_keys:
             try:
                 db.mod_entry('MCLAG_DOMAIN', domain_id, fvs)
             except ValueError as e:
-                ctx.Fail("Invalid ConfigDB. Error: {}".format(e))
+                ctx.fail("Invalid ConfigDB. Error: {}".format(e))
         else:
             ctx.fail("only one mclag Domain can be configured. Already one domain {} configured ".format(list(mclag_domain_keys)[0]))
 

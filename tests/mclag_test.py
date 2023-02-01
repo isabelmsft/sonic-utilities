@@ -1,5 +1,6 @@
 import os
 import traceback
+import mock
 
 from click.testing import CliRunner
 
@@ -7,7 +8,7 @@ import config.main as config
 import config.mclag as mclag
 import show.main as show
 from utilities_common.db import Db
-
+from mock import patch
 
 MCLAG_DOMAIN_ID = "123"
 MCLAG_INVALID_DOMAIN_ID1 = "-1"
@@ -225,9 +226,33 @@ class TestMclag(object):
         result = runner.invoke(config.config.commands["mclag"].commands["add"], [5000, MCLAG_SRC_IP, MCLAG_PEER_IP, MCLAG_PEER_LINK], obj=obj)
         assert result.exit_code != 0, "mclag invalid domain test case with code {}:{} Output:{}".format(type(result.exit_code), result.exit_code, result.output)
 
+    @patch("validated_config_db_connector.device_info.is_yang_config_validation_enabled", mock.Mock(return_value=True))
+    @patch("config.validated_config_db_connector.ValidatedConfigDBConnector.validated_set_entry", mock.Mock(side_effect=ValueError))
+    def test_add_mclag_domain_invalid_yang_validation(self):
+        mclag.ADHOC_VALIDATION = False
+        runner = CliRunner()
+        db = Db()
+        obj = {'db':db.cfgdb}
 
+        # add invalid mclag domain
+        result = runner.invoke(config.config.commands["mclag"].commands["add"], [MCLAG_DOMAIN_ID, MCLAG_SRC_IP, MCLAG_PEER_IP, MCLAG_INVALID_PEER_LINK4], obj=obj)
+        assert "Invalid ConfigDB. Error" in result.output
 
+    @patch("validated_config_db_connector.device_info.is_yang_config_validation_enabled", mock.Mock(return_value=True))
+    @patch("config.validated_config_db_connector.ValidatedConfigDBConnector.validated_mod_entry", mock.Mock(side_effect=ValueError))
+    @patch("config.main.ConfigDBConnector.get_table", mock.Mock(return_value={"123": "xyz"}))
+    def test_add_mclag_domain_invalid_yang_validation_override(self):
+        mclag.ADHOC_VALIDATION = False
+        runner = CliRunner()
+        db = Db()
+        obj = {'db':db.cfgdb}
+
+        # add invalid mclag domain
+        result = runner.invoke(config.config.commands["mclag"].commands["add"], [MCLAG_DOMAIN_ID, MCLAG_SRC_IP, MCLAG_PEER_IP, MCLAG_INVALID_PEER_LINK4], obj=obj)
+        assert "Invalid ConfigDB. Error" in result.output
+    
     def test_add_mclag_domain(self):
+        mclag.ADHOC_VALIDATION = True
         runner = CliRunner()
         db = Db()
         obj = {'db':db.cfgdb}
@@ -570,15 +595,14 @@ class TestMclag(object):
 
         # add mclag domain entry in db
         db.cfgdb.set_entry("MCLAG_DOMAIN", MCLAG_DOMAIN_ID, {"source_ip": MCLAG_SRC_IP})
-
         result = runner.invoke(config.config.commands["mclag"].commands["add"], [MCLAG_DOMAIN_ID, MCLAG_SRC_IP, MCLAG_PEER_IP, MCLAG_PEER_LINK], obj=obj)
-        assert result.exit_code != 0, "mclag add domain peer ip test caase with code {}:{} Output:{}".format(type(result.exit_code), result.exit_code, result.output)
+        assert result.exit_code == 0, "mclag add domain peer ip test caase with code {}:{} Output:{}".format(type(result.exit_code), result.exit_code, result.output)
         assert self.verify_mclag_domain_cfg(db, MCLAG_DOMAIN_ID, MCLAG_SRC_IP, MCLAG_PEER_IP, MCLAG_PEER_LINK) == True, "mclag config not found"
-
+        print(result.output)
 
         # modify mclag config
-        result = runner.invoke(config.config.commands["mclag"].commands["add"], [MCLAG_DOMAIN_ID, MCLAG_SRC_IP, MCLAG_PEER_IP, MCLAG_PEER_LINK], obj=obj)
-        assert result.exit_code != 0, "test_mclag_domain_add_again with code {}:{} Output:{}".format(type(result.exit_code), result.exit_code, result.output)
+        result = runner.invoke(config.config.commands["mclag"].commands["add"], [MCLAG_DOMAIN_ID, MCLAG_SRC_IP, MCLAG_PEER_IP, MCLAG_PEER_LINK2], obj=obj)
+        assert result.exit_code == 0, "test_mclag_domain_add_again with code {}:{} Output:{}".format(type(result.exit_code), result.exit_code, result.output)
         assert self.verify_mclag_domain_cfg(db, MCLAG_DOMAIN_ID, MCLAG_SRC_IP, MCLAG_PEER_IP, MCLAG_PEER_LINK2) == True, "mclag config not modified"
 
 
