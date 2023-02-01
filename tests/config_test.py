@@ -1878,7 +1878,7 @@ class TestConfigNtp(object):
         db = Db()
         obj = {'db':db.cfgdb}
 
-        result = runner.invoke(config.config.commands["ntp"], ["add"], ["10.10.10.x"], obj=obj)
+        result = runner.invoke(config.config.commands["ntp"], ["add", "10.10.10.x"], obj=obj)
         print(result.exit_code)
         print(result.output)
         assert "Invalid ConfigDB. Error" in result.output
@@ -1889,12 +1889,12 @@ class TestConfigNtp(object):
         db = Db()
         obj = {'db':db.cfgdb}
 
-        result = runner.invoke(config.config.commands["ntp"], ["add"], ["10.10.10.x"], obj=obj)
+        result = runner.invoke(config.config.commands["ntp"], ["del", "10.10.10.x"], obj=obj)
         print(result.exit_code)
         print(result.output)
         assert "Invalid IP address" in result.output
 
-    @patch("config.validated_config_db_connector.ValidatedConfigDBConnector.get_table", mock.Mock(return_value="10.10.10.10"))
+    @patch("config.main.ConfigDBConnector.get_table", mock.Mock(return_value="10.10.10.10"))
     @patch("config.validated_config_db_connector.ValidatedConfigDBConnector.validated_set_entry", mock.Mock(side_effect=JsonPatchConflict))
     @patch("validated_config_db_connector.device_info.is_yang_config_validation_enabled", mock.Mock(return_value=True))
     def test_del_ntp_server_invalid_ip_yang_validation(self):
@@ -1903,7 +1903,7 @@ class TestConfigNtp(object):
         db = Db()
         obj = {'db':db.cfgdb}
 
-        result = runner.invoke(config.config.commands["ntp"], ["add"], ["10.10.10.10"], obj=obj)
+        result = runner.invoke(config.config.commands["ntp"], ["del", "10.10.10.10"], obj=obj)
         print(result.exit_code)
         print(result.output)
         assert "Invalid ConfigDB. Error" in result.output
