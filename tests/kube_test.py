@@ -133,7 +133,7 @@ class TestKube(object):
         db.cfgdb.mod_entry("KUBERNETES_MASTER", "SERVER", {"ip": "10.10.10.11"})
         # Add IP when already configured
         result = runner.invoke(config.config.commands["kubernetes"].commands["server"], ["ip", "10.10.10.12"], obj=db)
-        assert "Invalid ConfigDB1. Error" in result.output
+        assert "Invalid ConfigDB. Error" in result.output
 
     
     def test_only_kube_server(self, get_cmd_module):
