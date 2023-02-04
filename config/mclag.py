@@ -170,12 +170,12 @@ def add_mclag_domain(ctx, domain_id, source_ip_addr, peer_ip_addr, peer_ifname):
 def del_mclag_domain(ctx, domain_id):
     """Delete MCLAG Domain"""
     
+    db = ValidatedConfigDBConnector(ctx.obj['db'])
+    
     if ADHOC_VALIDATION:
         if not mclag_domain_id_valid(domain_id):
             ctx.fail("{} invalid domain ID, valid range is 1 to 4095".format(domain_id))  
-
-    db = ValidatedConfigDBConnector(ctx.obj['db'])
-    if ADHOC_VALIDATION:
+        
         entry = db.get_entry('MCLAG_DOMAIN', domain_id)
         if entry is None:
             ctx.fail("MCLAG Domain {} not configured ".format(domain_id))  
@@ -287,8 +287,9 @@ def add_mclag_member(ctx, domain_id, portchannel_names):
 
     portchannel_list = portchannel_names.split(",")
     for portchannel_name in portchannel_list:
-        if is_portchannel_name_valid(portchannel_name) != True:
-            ctx.fail("{} is invalid!, name should have prefix '{}' and suffix '{}'" .format(portchannel_name, CFG_PORTCHANNEL_PREFIX, CFG_PORTCHANNEL_NO))
+        if ADHOC_VALIDATION:
+            if is_portchannel_name_valid(portchannel_name) != True:
+                ctx.fail("{} is invalid!, name should have prefix '{}' and suffix '{}'" .format(portchannel_name, CFG_PORTCHANNEL_PREFIX, CFG_PORTCHANNEL_NO))
         try:
             db.set_entry('MCLAG_INTERFACE', (domain_id, portchannel_name), {'if_type':"PortChannel"} )
         except ValueError as e:
