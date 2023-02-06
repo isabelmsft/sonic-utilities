@@ -179,7 +179,6 @@ def del_mclag_domain(ctx, domain_id):
         entry = db.get_entry('MCLAG_DOMAIN', domain_id)
         if entry is None:
             ctx.fail("MCLAG Domain {} not configured ".format(domain_id))  
-            return
 
     click.echo("MCLAG Domain delete takes care of deleting all associated MCLAG Interfaces")
 
