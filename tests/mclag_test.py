@@ -496,6 +496,29 @@ class TestMclag(object):
         assert result.exit_code != 0, "mclag invalid member del case failed with code {}:{} Output:{}".format(type(result.exit_code), result.exit_code, result.output)
 
 
+    @patch("config.validated_config_db_connector.ValidatedConfigDBConnector.validated_set_entry", mock.Mock(side_effect=ValueError))
+    def test_mclag_add__unique_ip_yang_validation(self):
+        runner = CliRunner()
+        db = Db()
+        obj = {'db':db.cfgdb}
+        db.cfgdb.set_entry("MCLAG_DOMAIN", MCLAG_DOMAIN_ID, {"source_ip": MCLAG_SRC_IP})
+        
+        with mock.patch('validated_config_db_connector.device_info.is_yang_config_validation_enabled', return_value=True):
+            result = runner.invoke(config.config.commands["mclag"].commands["unique-ip"].commands["add"], [MCLAG_UNIQUE_IP_VLAN], obj=obj)
+            assert "Invalid ConfigDB. Error" in result.output
+
+
+    @patch("config.validated_config_db_connector.ValidatedConfigDBConnector.validated_set_entry", mock.Mock(side_effect=JsonPatchConflict))
+    def test_mclag_del_unique_ip_yang_validation(self):
+        runner = CliRunner()
+        db = Db()
+        obj = {'db':db.cfgdb}
+        db.cfgdb.set_entry("MCLAG_DOMAIN", MCLAG_DOMAIN_ID, {"source_ip": MCLAG_SRC_IP})
+        
+        with mock.patch('validated_config_db_connector.device_info.is_yang_config_validation_enabled', return_value=True):
+            result = runner.invoke(config.config.commands["mclag"].commands["unique-ip"].commands["del"], [MCLAG_UNIQUE_IP_VLAN], obj=obj)
+            assert "Failed to delete mclag unique IP" in result.output
+    
 
     def test_mclag_add_unique_ip(self):
         runner = CliRunner()
@@ -682,7 +705,12 @@ class TestMclag(object):
 
         db.cfgdb.set_entry("MCLAG_DOMAIN", MCLAG_DOMAIN_ID, {"source_ip": MCLAG_SRC_IP, "peer_ip": MCLAG_PEER_IP, "peer_link": MCLAG_PEER_LINK})
         db.cfgdb.set_entry('MCLAG_INTERFACE', (MCLAG_DOMAIN_ID, MCLAG_MEMBER_PO), {'if_type':"PortChannel"} )
+        db.cfgdb.set_entry('MCLAG_INTERFACE', (MCLAG_DOMAIN_ID, MCLAG_MEMBER_PO2), {'if_type':"PortChannel"} )
         
+        with mock.patch('validated_config_db_connector.device_info.is_yang_config_validation_enabled', return_value=True):
+            result = runner.invoke(config.config.commands["mclag"].commands["member"].commands["del"], [MCLAG_DOMAIN_ID, MCLAG_MEMBER_PO2], obj=obj)
+            assert "Failed to delete mclag member" in result.output
+
         with mock.patch('validated_config_db_connector.device_info.is_yang_config_validation_enabled', return_value=True):
             result = runner.invoke(config.config.commands["mclag"].commands["del"], [MCLAG_DOMAIN_ID], obj=obj)
             assert "Invalid ConfigDB. Error" in result.output
