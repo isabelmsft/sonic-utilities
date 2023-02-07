@@ -15,6 +15,7 @@ import itertools
 import copy
 
 from jsonpatch import JsonPatchConflict
+from jsonpointer import JsonPointerException
 from collections import OrderedDict
 from generic_config_updater.generic_updater import GenericUpdater, ConfigFormat
 from minigraph import parse_device_desc_xml, minigraph_encoder
@@ -6611,19 +6612,23 @@ def add(ctx, name, ipaddr, port, vrf):
     """Add a sFlow collector"""
     ipaddr = ipaddr.lower()
 
-    if not is_valid_collector_info(name, ipaddr, port, vrf):
-        return
+    if ADHOC_VALIDATION:
+        if not is_valid_collector_info(name, ipaddr, port, vrf):
+            return
 
-    config_db = ctx.obj['db']
+    config_db = ValidatedConfigDBConnector(ctx.obj['db'])
     collector_tbl = config_db.get_table('SFLOW_COLLECTOR')
 
     if (collector_tbl and name not in collector_tbl and len(collector_tbl) == 2):
         click.echo("Only 2 collectors can be configured, please delete one")
         return
-
-    config_db.mod_entry('SFLOW_COLLECTOR', name,
-                        {"collector_ip": ipaddr,  "collector_port": port,
-                         "collector_vrf": vrf})
+    
+    try:
+        config_db.mod_entry('SFLOW_COLLECTOR', name,
+                            {"collector_ip": ipaddr,  "collector_port": port,
+                             "collector_vrf": vrf})
+    except ValueError as e:
+        ctx.fail("Invalid ConfigDB. Error: {}".format(e))
     return
 
 #
@@ -6634,14 +6639,17 @@ def add(ctx, name, ipaddr, port, vrf):
 @click.pass_context
 def del_collector(ctx, name):
     """Delete a sFlow collector"""
-    config_db = ctx.obj['db']
+    config_db = ValidatedConfigDBConnector(ctx.obj['db'])
     collector_tbl = config_db.get_table('SFLOW_COLLECTOR')
 
     if name not in collector_tbl:
         click.echo("Collector: {} not configured".format(name))
         return
 
-    config_db.mod_entry('SFLOW_COLLECTOR', name, None)
+    try:
+        config_db.set_entry('SFLOW_COLLECTOR', name, None)
+    except (JsonPatchConflict, JsonPointerException) as e:
+        ctx.fail("Invalid ConfigDB. Error: {}".format(e))
 
 #
 # 'sflow agent-id' group
