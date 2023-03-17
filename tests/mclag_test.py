@@ -505,7 +505,7 @@ class TestMclag(object):
         
         with mock.patch('validated_config_db_connector.device_info.is_yang_config_validation_enabled', return_value=True):
             result = runner.invoke(config.config.commands["mclag"].commands["unique-ip"].commands["add"], [MCLAG_UNIQUE_IP_VLAN], obj=obj)
-            assert "Invalid ConfigDB. Error" in result.output
+            assert "Invalid ConfigDB. Error" in result.output 
 
 
     @patch("config.validated_config_db_connector.ValidatedConfigDBConnector.validated_set_entry", mock.Mock(side_effect=JsonPatchConflict))
