@@ -63,7 +63,7 @@ class TestNat(object):
     @patch("config.nat.SonicV2Connector.exists", mock.Mock(return_value="True"))
     @patch("validated_config_db_connector.device_info.is_yang_config_validation_enabled", mock.Mock(return_value=True))
     @patch("config.validated_config_db_connector.ValidatedConfigDBConnector.validated_set_entry", mock.Mock(side_effect=ValueError))
-    def test_add_udp_yang_validation(self):
+    def test_add_tcp_yang_validation(self):
         nat.ADHOC_VALIDATION = False
         runner = CliRunner()
         db = Db()
