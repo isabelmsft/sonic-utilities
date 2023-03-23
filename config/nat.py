@@ -555,7 +555,7 @@ def remove_basic(ctx, global_ip, local_ip):
             try:
                 config_db.set_entry(table, key, None)
                 entryFound = True
-            except (JsonPatchConflict, JsonPointerExceptiOn) as e:
+            except (JsonPatchConflict, JsonPointerException) as e:
                 ctx.fail("Invalid ConfigDB. Error: {}".format(e))
 
     if entryFound is False:
