@@ -6677,9 +6677,8 @@ def add(ctx, name, ipaddr, port, vrf):
     """Add a sFlow collector"""
     ipaddr = ipaddr.lower()
 
-    if ADHOC_VALIDATION:
-        if not is_valid_collector_info(name, ipaddr, port, vrf):
-            return
+    if not is_valid_collector_info(name, ipaddr, port, vrf):
+        return
 
     config_db = ValidatedConfigDBConnector(ctx.obj['db'])
     collector_tbl = config_db.get_table('SFLOW_COLLECTOR')
@@ -6705,11 +6704,12 @@ def add(ctx, name, ipaddr, port, vrf):
 def del_collector(ctx, name):
     """Delete a sFlow collector"""
     config_db = ValidatedConfigDBConnector(ctx.obj['db'])
-    collector_tbl = config_db.get_table('SFLOW_COLLECTOR')
+    if ADHOC_VALIDATION:
+        collector_tbl = config_db.get_table('SFLOW_COLLECTOR')
 
-    if name not in collector_tbl:
-        click.echo("Collector: {} not configured".format(name))
-        return
+        if name not in collector_tbl:
+            click.echo("Collector: {} not configured".format(name))
+            return
 
     try:
         config_db.set_entry('SFLOW_COLLECTOR', name, None)
